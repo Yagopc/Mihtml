@@ -6,6 +6,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <title>Lista de Compras</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .item label {
+            flex-grow: 1;
+            font-size: 18px;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .buttons button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            flex: 1 1 45%;
+            max-width: 200px;
+        }
+        .buttons button:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+        .search {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .search input {
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+            max-width: 400px;
+            margin-bottom: 10px;
+        }
+        .search button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .search button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -34,6 +114,286 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        let items = [];
+        let nuevosItems = [];
+
+        async function cargarItems() {
+            const response = await fetch('items.json');
+            items = await response.json();
+            mostrarLista();
+        }
+
+        function mostrarLista() {
+            const listaDiv = document.getElementById('lista');
+            listaDiv.innerHTML = '';
+            items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `item-${index}`;
+                checkbox.onclick = () => seleccionarArticulo(index);
+                const label = document.createElement('label');
+                label.htmlFor = `item-${index}`;
+                label.textContent = item;
+                label.contentEditable = true;
+                label.onblur = () => modificarItem(index, label.textContent);
+                itemDiv.appendChild(checkbox);
+                itemDiv.appendChild(label);
+                listaDiv.appendChild(itemDiv);
+            });
+
+            // Marcar los elementos seleccionados previamente
+            const listaGuardada = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+            listaGuardada.forEach((item) => {
+                const index = items.indexOf(item);
+                if (index !== -1) {
+                    document.getElementById(`item-${index}`).checked = true;
+                }
+            });
+        }
+
+        function mostrarCompra() {
+            const listaGuardada = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+            const listaDiv = document.getElementById('lista');
+            listaDiv.innerHTML = '';
+
+            if (listaGuardada.length === 0) {
+                listaDiv.innerHTML = '<p>Lista vacía</p>';
+            } else {
+                items.forEach((item, index) => {
+                    if (listaGuardada.includes(item)) {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'item';
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = `compra-${index}`;
+                        checkbox.checked = true;
+                        checkbox.onclick = () => seleccionarArticulo(index);
+                        const label = document.createElement('label');
+                        label.htmlFor = `compra-${index}`;
+                        label.textContent = item;
+                        label.contentEditable = true;
+                        label.onblur = () => modificarItemGuardado(index, label.textContent);
+                        itemDiv.appendChild(checkbox);
+                        itemDiv.appendChild(label);
+                        listaDiv.appendChild(itemDiv);
+                    }
+                });
+            }
+        }
+
+        function guardarSeleccionActual() {
+            const seleccionados = new Set(JSON.parse(localStorage.getItem('listaGuardada')) || []);
+            items.forEach((item, index) => {
+                const checkbox = document.getElementById(`item-${index}`) || document.getElementById(`compra-${index}`);
+                if (checkbox && checkbox.checked) {
+                    seleccionados.add(item);
+                }
+            });
+            localStorage.setItem('listaGuardada', JSON.stringify(Array.from(seleccionados)));
+            alert('Selección actual guardada');
+        }
+
+        function buscarArticulo() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const listaDiv = document.getElementById('lista');
+            listaDiv.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            items.forEach((item, index) => {
+                if (item.toLowerCase().includes(searchInput)) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'item';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `item-${index}`;
+                    checkbox.onclick = () => seleccionarArticulo(index);
+                    const label = document.createElement('label');
+                    label.htmlFor = `item-${index}`;
+                    label.textContent = item;
+                    label.contentEditable = true;
+                    label.onblur = () => modificarItem(index, label.textContent);
+                    itemDiv.appendChild(checkbox);
+                    itemDiv.appendChild(label);
+                    fragment.appendChild(itemDiv);
+                }
+            });
+            listaDiv.appendChild(fragment);
+
+            // Marcar los elementos seleccionados previamente
+            const listaGuardada = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+            listaGuardada.forEach((item) => {
+                const index = items.indexOf(item);
+                if (index !== -1) {
+                    document.getElementById(`item-${index}`).checked = true;
+                }
+            });
+
+            // Marcar los elementos seleccionados en la búsqueda
+            items.forEach((item, index) => {
+                const checkbox = document.getElementById(`item-${index}`);
+                if (checkbox && checkbox.checked) {
+                    seleccionarArticulo(index);
+                }
+            });
+        }
+
+        function seleccionarArticulo(index) {
+            const checkbox = document.getElementById(`item-${index}`) || document.getElementById(`compra-${index}`);
+            if (checkbox.checked) {
+                const seleccionados = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+                if (!seleccionados.includes(items[index])) {
+                    seleccionados.push(items[index]);
+                    localStorage.setItem('listaGuardada', JSON.stringify(seleccionados));
+                }
+            } else {
+                let seleccionados = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+                seleccionados = seleccionados.filter(item => item !== items[index]);
+                localStorage.setItem('listaGuardada', JSON.stringify(seleccionados));
+            }
+        }
+
+        function modificarItem(index, nuevoTexto) {
+            items[index] = nuevoTexto;
+        }
+
+        function modificarItemGuardado(index, nuevoTexto) {
+            const listaGuardada = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+            listaGuardada[index] = nuevoTexto;
+            localStorage.setItem('listaGuardada', JSON.stringify(listaGuardada));
+        }
+
+        function añadirArticulo() {
+            const nuevoArticulo = prompt('Introduce el nuevo artículo:');
+            if (nuevoArticulo) {
+                nuevosItems.push(nuevoArticulo);
+                mostrarLista();
+            }
+        }
+
+        async function guardarTodos() {
+            try {
+                // Leer el archivo items.json
+                const response = await fetch('items.json');
+                let itemsExistentes = await response.json();
+
+                // Combinar los artículos existentes con los nuevos
+                const todosLosItems = [...itemsExistentes, ...nuevosItems];
+
+                // Ordenar los artículos alfabéticamente
+                todosLosItems.sort((a, b) => a.localeCompare(b));
+
+                // Guardar los artículos ordenados en el archivo items.json
+                const blob = new Blob([JSON.stringify(todosLosItems, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'items.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                // Limpiar la lista de nuevos artículos
+                nuevosItems = [];
+                alert('Todos los artículos se han guardado correctamente.');
+            } catch (error) {
+                console.error('Error al guardar todos los artículos:', error);
+            }
+        }
+
+        function enviarLista() {
+            const listaGuardada = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+            if (listaGuardada.length === 0) {
+                alert('La lista está vacía.');
+                return;
+            }
+
+            const listaTexto = listaGuardada.join('\n');
+            const mensaje = encodeURIComponent(`Lista de la compra:\n\n${listaTexto}`);
+
+            const opciones = `
+                <div>
+                    <button onclick="window.location.href='mailto:?subject=Lista de la compra&body=${mensaje}'">Enviar por Email</button>
+                    <button onclick="window.location.href='https://wa.me/?text=${mensaje}'">Enviar por WhatsApp</button>
+                </div>
+            `;
+
+            const dialogo = document.createElement('div');
+            dialogo.innerHTML = opciones;
+            document.body.appendChild(dialogo);
+        }
+
+        function guardarCompra() {
+            const listaGuardada = JSON.parse(localStorage.getItem('listaGuardada')) || [];
+            if (listaGuardada.length === 0) {
+                alert('La lista está vacía.');
+                return;
+            }
+
+            const fecha = new Date();
+            const dia = fecha.getDate();
+            const mes = fecha.getMonth() + 1; // Los meses son indexados desde 0
+            const anio = fecha.getFullYear();
+            const nombreArchivo = `compra_${dia}-${mes}-${anio}.json`;
+
+            const blob = new Blob([JSON.stringify(listaGuardada, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function limpiarLista() {
+            const confirmacion = confirm('¿Estás seguro de que deseas borrar la lista? Esta acción no se puede deshacer.');
+
+            if (confirmacion) {
+                listaGuardada = [];
+                localStorage.removeItem('listaGuardada');
+                mostrarCompra();
+                alert('Lista borrada correctamente.');
+            } else {
+                alert('Acción cancelada. La lista no ha sido borrada.');
+            }
+        }
+
+        function cargarLista1() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const text = await file.text();
+                    const listaGuardada = JSON.parse(text);
+                    localStorage.setItem('listaGuardada', JSON.stringify(listaGuardada));
+                    mostrarCompra();
+                    alert('Lista cargada correctamente.');
+                }
+            };
+            input.click();
+        }
+
+        function mostrarMas() {
+            document.getElementById('botonesExtra').classList.remove('hidden');
+            document.getElementById('btnMas').classList.add('hidden');
+        }
+
+        function mostrarMenos() {
+            document.getElementById('botonesExtra').classList.add('hidden');
+            document.getElementById('btnMas').classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarItems().then(() => {
+                mostrarCompra();
+            });
+        });
+    </script>
 </body>
-</html>
+                </html>
