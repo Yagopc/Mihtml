@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Lista de Compras</title>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <img src="carrito.png" alt="Carrito de la compra" style="width: 100px; height: 100px; vertical-align: middle; margin-right: 8px;">
+            Compra
+        </h1>
+        <div id="lista"></div>
+        <div class="buttons">
+            <button onclick="mostrarCompra()">Ver Compra</button>
+            <button onclick="mostrarLista()">Ver Todos</button>
+            <button onclick="limpiarLista()">Limpiar lista</button>
+            <button id="btnMas" onclick="mostrarMas()">Más</button>
+            <div id="botonesExtra" class="hidden">
+                <button onclick="añadirArticulo()">Añadir Otro</button>
+                <button onclick="guardarTodos()">Guardar Todos</button>
+                <button onclick="enviarLista()">Enviar a...</button>
+                <button onclick="guardarCompra()">Guardar la compra</button>
+                <button onclick="cargarLista1()">Cargar compra</button>
+                <button onclick="mostrarMenos()">Menos</button>
+            </div>
+        </div>
+        <div class="search">
+            <input type="text" id="searchInput" placeholder="Buscar artículo">
+            <button onclick="buscarArticulo()">Buscar</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
